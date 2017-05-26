@@ -1,13 +1,19 @@
 import networkx as nx
 import random
 import HelperMethods as helpers
+import cProfile
 
 # average citation count
-c=20
+c=50
 # number of nodes to grow to
-n=500
+# n = 500
+# n = 5000
+n = 1000
+# n = 50000
 # factor to use the pref attachment out of 10
-a=2  #20%
+a = 2  # 20%
+# a = 5  # 50%
+# a = 10  # 100%
 
 
 def map_random_number_to_node(n, degrees):
@@ -29,7 +35,7 @@ def add_citations(graph, i, degrees):
         for j in range(i):
             graph.add_edge(i, j)
             degrees[j] += 1
-            print("Edge added from {} to {}", i, j)
+            # print("Edge added from {} to {}", i, j)
     else:
         for j in range(c):
             # Pick a random number up to the number of citations or graph edges
@@ -38,7 +44,7 @@ def add_citations(graph, i, degrees):
             node_to_cite=map_random_number_to_node(random_no, degrees)
             graph.add_edge(i,node_to_cite)
             degrees[node_to_cite] += 1
-            print("Edge added from {} to {}", i, j)
+            # print("Edge added from {} to {}", i, node_to_cite)
 
 
 def create_price_model_graph():
@@ -56,12 +62,16 @@ def create_price_model_graph():
     return graph
 
 
-def print_price_model_graph_as_tect(G):
+def print_price_model_graph_as_text(G):
     for node in G.edges_iter():
         print(node)
 
 
-full_graph = create_price_model_graph()
-print_price_model_graph_as_tect(full_graph)
-helpers.plot_degseq(full_graph,False)
-input("Press enter to finish.")
+def run_price_model_sim():
+    full_graph = create_price_model_graph()
+
+    print_price_model_graph_as_text(full_graph)
+    helpers.plot_degseq(full_graph, False)
+    input("Press enter to finish.")
+
+run_price_model_sim()

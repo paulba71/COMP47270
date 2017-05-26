@@ -275,7 +275,7 @@ def main():
     eigenv_pos, V = repos_with_eigs(A, num_nodes)
     plot_graph(graph, eigenv_pos, 3)
 
-    print("Plotting spring layou")
+    print("Plotting spring layout")
     pos=nx.spring_layout(graph)
     plot_graph(graph, pos, 4)
 
@@ -290,9 +290,9 @@ def main():
     input("Press Enter to Continue ...")
 
 
-main()
+#main()
 
-# analyse_directed_graph()
+analyse_directed_graph()
 
 # simulate_price_model
 
