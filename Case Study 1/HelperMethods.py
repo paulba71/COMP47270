@@ -29,3 +29,17 @@ def plot_degseq(G, inset):
         nx.draw_networkx_nodes(Gcc, pos, node_size=20)
         nx.draw_networkx_edges(Gcc, pos, alpha=0.4)
     plt.show()
+
+
+def analyse_directed_graph_preloaded(graph):
+    print("Graph nodes: ", graph.number_of_nodes())
+    print("Graph edges: ", graph.number_of_edges())  # already has edges from dataset...
+
+    num_strongly_connected_components = nx.number_strongly_connected_components(graph)
+    print("Strongly Connected Component Count - ", num_strongly_connected_components)
+
+    # Draw loglog graph...
+    plot_degseq(graph, False)
+
+    # wait at end...
+    input("Press Enter to Continue ...")

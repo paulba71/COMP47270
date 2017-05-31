@@ -9,12 +9,12 @@ import scipy.sparse
 from scipy.cluster.vq import vq, kmeans
 from scipy.spatial import Delaunay
 
-facebook = "/Users/paulbarnes/PycharmProjects/SNAP Datasets/facebook_combined.txt"
-twitter = "/Users/paulbarnes/PycharmProjects/SNAP Datasets/twitter_combined.txt"
-google = "/Users/paulbarnes/PycharmProjects/SNAP Datasets/web-Google1.txt"
-roads_CA = "/Users/paulbarnes/PycharmProjects/SNAP Datasets/roadNet-CA.txt"
-amazon = "/Users/paulbarnes/PycharmProjects/SNAP Datasets/com-amazon-ungraph.txt"
-college = "/Users/paulbarnes/PycharmProjects/SNAP Datasets/collegemsg.txt"
+facebook = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\facebook_combined.txt"
+twitter = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\twitter_combined.txt"
+google = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\web-Google1.txt"
+roads_CA = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\roadNet-CA.txt"
+amazon = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\com-amazon-ungraph.txt"
+college = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\collegemsg.txt"
 
 
 def get_default_graph():
