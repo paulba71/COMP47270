@@ -1,3 +1,8 @@
+# Only in the project as a reference...
+# No code from here is run in the case studies
+# All running code has been refactored into Main.py
+
+
 # import the networkx network analysis package
 import networkx as nx
 

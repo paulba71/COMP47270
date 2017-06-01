@@ -294,6 +294,5 @@ def main():
 
 analyse_directed_graph()
 
-# simulate_price_model
 
 
