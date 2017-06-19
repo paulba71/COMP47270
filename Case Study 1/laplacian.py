@@ -186,4 +186,4 @@ def cluster_nodes(G, feat, pos, eigen_pos):
                         )
 
 # Run an example.
-# placement()
+placement()

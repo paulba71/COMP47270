@@ -2,15 +2,29 @@ import networkx as nx
 import numpy as np
 import scipy as sp
 import random
+import platform
 from scipy.spatial import Delaunay
 
-facebook = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\facebook_combined.txt"
-twitter = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\twitter_combined.txt"
-google = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\web-Google1.txt"
-roads_CA = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\roadNet-CA.txt"
-amazon = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\com-amazon-ungraph.txt"
-college = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\collegemsg.txt"
+# import the plotting functionality from matplotlib
+import matplotlib.pyplot as plt
 
+# import kmeans
+from scipy.cluster.vq import vq, kmeans
+
+if platform.system() != "Darwin":
+    facebook = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\facebook_combined.txt"
+    twitter = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\twitter_combined.txt"
+    google = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\web-Google1.txt"
+    roads_CA = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\roadNet-CA.txt"
+    amazon = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\com-amazon-ungraph.txt"
+    college = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\collegemsg.txt"
+else:
+    facebook = "/Users/paulba/PycharmProjects/COMP47270/Datasets/facebook_combined.txt"
+    twitter = "/Users/paulba/PycharmProjects/COMP47270/Datasets/twitter_combined.txt"
+    google = "/Users/paulba/PycharmProjects/COMP47270/Datasets/web-Google1.txt"
+    roads_CA = "/Users/paulba/PycharmProjects/COMP47270/Datasets/roadNet-CA.txt"
+    amazon = "/Users/paulba/PycharmProjects/COMP47270/Datasets/com-amazon-ungraph.txt"
+    college = "/Users/paulba/PycharmProjects/COMP47270/Datasets/collegemsg.txt"
 
 def get_default_graph():
     num_nodes = 100
@@ -120,5 +134,79 @@ def load_graph(name, as_directed=False):
     return graph
 
 
+def plot_graph(g, pos, fig_num):
+    label = dict()
+    label_pos=dict()
+    for i in range(g.number_of_nodes()):
+        label[i] = i
+        label_pos[i] = pos[i][0]+0.02, pos[i][1]+0.02
+
+    fig = plt.figure(fig_num, figsize=(8, 8))
+    fig.clf()
+    nx.draw_networkx_nodes(g,
+                           pos,
+                           node_size=40,
+                           hold=False,
+                           )
+
+    nx.draw_networkx_edges(g,pos, hold=True)
+
+    nx.draw_networkx_labels(g,
+                            label_pos,
+                            label,
+                            font_size=10,
+                            hold=True,
+                            )
+    fig.show()
+
+
+def cluster_nodes(G, feat, pos, eigen_pos):
+    book, distortion = kmeans(feat, 3)
+    codes, distortion = vq(feat, book)
+
+    nodes = np.array(range(G.number_of_nodes()))
+    W0 = nodes[codes == 0].tolist()
+    W1 = nodes[codes == 1].tolist()
+    W2 = nodes[codes == 2].tolist()
+    print("W0 ", W0)
+    print("W1 ", W1)
+    print("W2 ", W2)
+    plt.figure(3)
+    nx.draw_networkx_nodes(G,
+                           eigen_pos,
+                           node_size=40,
+                           hold=True,
+                           nodelist=W0,
+                           node_color='m'
+                           )
+    nx.draw_networkx_nodes(G,
+                           eigen_pos,
+                           node_size=40,
+                           hold=True,
+                           nodelist=W1,
+                           node_color='b'
+                           )
+    plt.figure(2)
+    nx.draw_networkx_nodes(G,
+                           pos,
+                           node_size=40,
+                           hold=True,
+                           nodelist=W0,
+                           node_color='m'
+                           )
+    nx.draw_networkx_nodes(G,
+                           pos,
+                           node_size=40,
+                           hold=True,
+                           nodelist=W1,
+                           node_color='b'
+                           )
+
+
 def main():
     graph = load_graph("facebook")
+    nx.find_cliques()
+
+
+main()
+
