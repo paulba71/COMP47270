@@ -113,7 +113,7 @@ def placement():
     # Use kemans to cluster the points in the vector V
 
     features = np.column_stack((V[:,1], V[:,2]))
-    cluster_nodes(G,features,pos,eigen_pos)
+    #cluster_nodes(G,features,pos,eigen_pos)
 
     # Finally, use the columns of A directly for clustering
     cluster_nodes(G,A.todense(),pos,eigen_pos)
@@ -191,4 +191,4 @@ def cluster_nodes(G, feat, pos, eigen_pos):
                         )
 
 # Run an example.
-# placement()
+placement()

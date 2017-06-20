@@ -160,6 +160,37 @@ def plot_graph(g, pos, fig_num):
     fig.show()
 
 
+def get_random_positions(graph_size):
+    x = [random.random() for i in range(graph_size)]
+    y = [random.random() for i in range(graph_size)]
+
+    x = np.array(x)
+    y = np.array(y)
+
+    pos = dict()
+    for i in range(graph_size):
+        pos[i] = x[i], y[i]
+
+    return pos
+
+def get_eigen_pos(A, num_nodes):
+    #   eigen_pos holds the positions
+    eigen_pos = dict()
+    deg = A.sum(0)
+    diags = np.array([0])
+    D = sp.sparse.spdiags(deg,diags,A.shape[0],A.shape[1])
+    Dinv = sp.sparse.spdiags(1/deg,diags,A.shape[0],A.shape[1])
+    # Normalised laplacian
+    L = Dinv*(D - A)
+    E, V= sp.sparse.linalg.eigs(L,3,None,100.0,'SM')
+    V = V.real
+
+    for i in range(num_nodes):
+        eigen_pos[i] = V[i,1].real,V[i,2].real
+
+    return eigen_pos, V
+
+
 def cluster_nodes(G, feat, pos, eigen_pos):
     book, distortion = kmeans(feat, 3)
     codes, distortion = vq(feat, book)
@@ -171,21 +202,21 @@ def cluster_nodes(G, feat, pos, eigen_pos):
     print("W0 ", W0)
     print("W1 ", W1)
     print("W2 ", W2)
-    plt.figure(3)
-    nx.draw_networkx_nodes(G,
-                           eigen_pos,
-                           node_size=40,
-                           hold=True,
-                           nodelist=W0,
-                           node_color='m'
-                           )
-    nx.draw_networkx_nodes(G,
-                           eigen_pos,
-                           node_size=40,
-                           hold=True,
-                           nodelist=W1,
-                           node_color='b'
-                           )
+    #plt.figure(3)
+    #nx.draw_networkx_nodes(G,
+    #                       eigen_pos,
+    #                       node_size=40,
+    #                       hold=True,
+    #                       nodelist=W0,
+    #                       node_color='m'
+    #                       )
+    #nx.draw_networkx_nodes(G,
+    #                       eigen_pos,
+    #                       node_size=40,
+    #                       hold=True,
+    #                       nodelist=W1,
+    #                       node_color='b'
+    #                       )
     plt.figure(2)
     nx.draw_networkx_nodes(G,
                            pos,
@@ -205,7 +236,28 @@ def cluster_nodes(G, feat, pos, eigen_pos):
 
 def main():
     graph = load_graph("facebook")
-    nx.find_cliques()
+    pos=get_random_positions(graph.number_of_nodes())
+    # Need to rebuild the graph...
+    A = nx.adjacency_matrix(graph)   # will use the adjacency matrix later
+    graph = nx.Graph(A)
+    # plot the graph...
+    plot_graph(graph, pos, 1)
+
+    #Use eigen_pos for positions
+    eigen_pos, V = get_eigen_pos(A, graph.number_of_nodes())
+    # plot the graph...
+    plot_graph(graph, eigen_pos, 2)
+
+    # Cluster the nodes using kmeans
+    #features = np.column_stack((V[:, 1], V[:, 2]))
+    #cluster_nodes(graph, features, pos, eigen_pos)
+
+    # Finally, use the columns of A directly for clustering
+    cluster_nodes(graph, A.todense(), pos, eigen_pos)
+
+    print("processing completed")
+
+
 
 
 main()
