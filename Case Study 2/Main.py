@@ -3,6 +3,7 @@ import numpy as np
 import scipy as sp
 import random
 import platform
+import os
 from scipy.spatial import Delaunay
 
 # import the plotting functionality from matplotlib
@@ -10,6 +11,9 @@ import matplotlib.pyplot as plt
 
 # import kmeans
 from scipy.cluster.vq import vq, kmeans
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print(dir_path)
 
 if platform.system() != "Darwin":
     facebook = "C:\\Users\\paulb\\PycharmProjects\\COMP47270\\Datasets\\facebook_combined.txt"
@@ -25,6 +29,7 @@ else:
     roads_CA = "/Users/paulba/PycharmProjects/COMP47270/Datasets/roadNet-CA.txt"
     amazon = "/Users/paulba/PycharmProjects/COMP47270/Datasets/com-amazon-ungraph.txt"
     college = "/Users/paulba/PycharmProjects/COMP47270/Datasets/collegemsg.txt"
+
 
 def get_default_graph():
     num_nodes = 100
@@ -219,14 +224,14 @@ def cluster_nodes(G, feat, pos, eigen_pos):
     #                       )
     plt.figure(2)
     nx.draw_networkx_nodes(G,
-                           pos,
+                           eigen_pos,
                            node_size=40,
                            hold=True,
                            nodelist=W0,
                            node_color='m'
                            )
     nx.draw_networkx_nodes(G,
-                           pos,
+                           eigen_pos,
                            node_size=40,
                            hold=True,
                            nodelist=W1,
@@ -249,15 +254,13 @@ def main():
     plot_graph(graph, eigen_pos, 2)
 
     # Cluster the nodes using kmeans
-    #features = np.column_stack((V[:, 1], V[:, 2]))
-    #cluster_nodes(graph, features, pos, eigen_pos)
+    features = np.column_stack((V[:, 1], V[:, 2]))
+    cluster_nodes(graph, features, pos, eigen_pos)
 
     # Finally, use the columns of A directly for clustering
-    cluster_nodes(graph, A.todense(), pos, eigen_pos)
+    #cluster_nodes(graph, A.todense(), pos, eigen_pos)
 
     print("processing completed")
-
-
 
 
 main()
