@@ -249,11 +249,11 @@ def main():
     plot_graph(graph, eigen_pos, 2)
 
     # Cluster the nodes using kmeans
-    #features = np.column_stack((V[:, 1], V[:, 2]))
-    #cluster_nodes(graph, features, pos, eigen_pos)
+    features = np.column_stack((V[:, 1], V[:, 2]))
+    cluster_nodes(graph, features, pos, eigen_pos)
 
     # Finally, use the columns of A directly for clustering
-    cluster_nodes(graph, A.todense(), pos, eigen_pos)
+    #cluster_nodes(graph, A.todense(), pos, eigen_pos)
 
     print("processing completed")
 
