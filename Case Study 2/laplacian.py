@@ -5,16 +5,18 @@
 
 # import the networkx network analysis package
 import networkx as nx
+from networkx.algorithms import community
 
 # import the plotting functionality from matplotlib
 import matplotlib.pyplot as plt
 
-#import Delaunay tesselation
+# import Delaunay tesselation
 from scipy.spatial import Delaunay
 
 # import kmeans
 from scipy.cluster.vq import vq, kmeans, whiten
 
+import itertools
 import numpy as np
 import scipy as sp
 import random
@@ -49,10 +51,10 @@ def get_default_graph(get_edges):
     # Make a graph with num_nodes nodes and zero edges
     # Plot the nodes using x,y as the node positions
 
-    G = nx.Graph()
+    graph = nx.Graph()
     for i in range(num_nodes):
         node_name = str(i)
-        G.add_node(node_name)
+        graph.add_node(node_name)
 
     # Now add some edges - use Delaunay tesselation
     # to produce a planar graph. Delaunay tesselation covers the
@@ -75,7 +77,7 @@ def get_default_graph(get_edges):
             j += 1
             edges[0][j] = tri[i][0]
             edges[1][j] = tri[i][2]
-            j +=  1
+            j += 1
             edges[0][j] = tri[i][2]
             edges[1][j] = tri[i][0]
             j += 1
@@ -87,14 +89,14 @@ def get_default_graph(get_edges):
             j += 1
 
         data = np.ones(6 * len(tri))
-        A = sp.sparse.csc_matrix((data, (edges[0, :], edges[1, :])))
+        adjacency_matrix = sp.sparse.csc_matrix((data, (edges[0, :], edges[1, :])))
 
-        for i in range(A.nnz):
-            A.data[i] = 1.0
+        for i in range(adjacency_matrix.nnz):
+            adjacency_matrix.data[i] = 1.0
 
-        G = nx.to_networkx_graph(A)
+        graph = nx.to_networkx_graph(adjacency_matrix)
 
-    return G
+    return graph
 
 
 def load_graph(name, as_directed=False):
@@ -142,7 +144,7 @@ def load_graph(name, as_directed=False):
             graph = nx.read_edgelist(college)
 
     if graph is None:
-        graph = get_default_graph()
+        graph = get_default_graph(True)
 
     return graph
 
@@ -161,9 +163,9 @@ def get_random_positions(graph_size):
     return pos
 
 
-def get_default_edges(G):
-    num_nodes = G.number_of_nodes()
-    A = nx.adjacency_matrix(G)
+def get_default_edges(graph):
+    num_nodes = graph.number_of_nodes()
+    A = nx.adjacency_matrix(graph)
     x = [random.random() for i in range(num_nodes)]
     y = [random.random() for i in range(num_nodes)]
 
@@ -179,7 +181,7 @@ def get_default_edges(G):
     tri = dl.simplices
 
     edges = np.zeros((2, 6 * len(tri)), dtype=int)
-    data = np.ones(6 * len(points))
+    # data = np.ones(6 * len(points))
     j = 0
     for i in range(len(tri)):
         edges[0][j] = tri[i][0]
@@ -202,27 +204,24 @@ def get_default_edges(G):
         j = j + 1
 
     data = np.ones(6 * len(tri))
-    A = sp.sparse.csc_matrix((data, (edges[0, :], edges[1, :])))
+    adjacency_matrix = sp.sparse.csc_matrix((data, (edges[0, :], edges[1, :])))
 
-    for i in range(A.nnz):
-        A.data[i] = 1.0
+    for i in range(adjacency_matrix.nnz):
+        adjacency_matrix.data[i] = 1.0
 
-    G = nx.to_networkx_graph(A)
-    return G
-
-
+    graph = nx.to_networkx_graph(adjacency_matrix)
+    return graph
 
 
-
-def plot_graph(G,pos,fignum):
+def plot_graph(G, pos, fig_num):
 
     label = dict()
-    label_pos=dict()
+    label_pos = dict()
     for i in range(G.number_of_nodes()):
         label[i] = i
         label_pos[i] = pos[i][0]+0.02, pos[i][1]+0.02
 
-    fig=plt.figure(fignum,figsize=(8,8))
+    fig = plt.figure(fig_num, figsize=(8, 8))
     fig.clf()
     nx.draw_networkx_nodes(G, pos, node_size=40, hold=False)
     nx.draw_networkx_edges(G, pos, hold=True)
@@ -244,15 +243,15 @@ def count_edge_cuts(G, w0, w1, w2):
         else:
             edge_cut_count += 1
     print('Edge cuts: ', edge_cut_count)
-    print('Community edges: ', edge_uncut_count)
+    print('Contained edges: ', edge_uncut_count)
     return edge_cut_count, edge_uncut_count
 
 
-def random_partition(G):
+def random_partition(graph):
     w0 = []
     w1 = []
     w2 = []
-    for node in G.nodes_iter():
+    for node in graph.nodes_iter():
         set_choice = random.randint(0, 2)
         if set_choice == 0:
             w0.append(node)
@@ -263,49 +262,26 @@ def random_partition(G):
     return w0, w1, w2
 
 
-def cluster_nodes(G, feat, pos, eigen_pos):
-    book,distortion = kmeans(feat,3)
+def cluster_nodes(graph, feat, pos, eigen_pos):
+    book,distortion = kmeans(feat, 3)
     codes,distortion = vq(feat, book)
 
-    nodes = np.array(range(G.number_of_nodes()))
-    W0 = nodes[codes==0].tolist()
-    W1 = nodes[codes==1].tolist()
-    W2 = nodes[codes==2].tolist()
+    nodes = np.array(range(graph.number_of_nodes()))
+    W0 = nodes[codes == 0].tolist()
+    W1 = nodes[codes == 1].tolist()
+    W2 = nodes[codes == 2].tolist()
     print("W0 ", W0)
     print("W1 ", W1)
     print("W2 ", W2)
-    count_edge_cuts(G, W0, W1, W2)
+    count_edge_cuts(graph, W0, W1, W2)
 
     plt.figure(3)
-    nx.draw_networkx_nodes(G,
-                           eigen_pos,
-                           node_size=40,
-                           hold=True,
-                           nodelist=W0,
-                           node_color='m'
-                        )
-    nx.draw_networkx_nodes(G,
-                           eigen_pos,
-                           node_size=40,
-                           hold=True,
-                           nodelist=W1,
-                           node_color='b'
-                        )
+    nx.draw_networkx_nodes(graph, eigen_pos, node_size=40, hold=True, nodelist=W0, node_color='m')
+    nx.draw_networkx_nodes(graph, eigen_pos, node_size=40, hold=True, nodelist=W1, node_color='b')
+
     plt.figure(2)
-    nx.draw_networkx_nodes(G,
-                           pos,
-                           node_size=40,
-                           hold=True,
-                           nodelist=W0,
-                           node_color='m'
-                        )
-    nx.draw_networkx_nodes(G,
-                           pos,
-                           node_size=40,
-                           hold=True,
-                           nodelist=W1,
-                           node_color='b'
-                        )
+    nx.draw_networkx_nodes(graph, pos, node_size=40, hold=True, nodelist=W0, node_color='m')
+    nx.draw_networkx_nodes(graph, pos, node_size=40, hold=True, nodelist=W1, node_color='b')
 
 
 def placement():
@@ -323,7 +299,7 @@ def placement():
     G = get_default_edges(G)
 
     # Need to rebuild the graph...
-    A = nx.adjacency_matrix(G)  # will use the adjacency matrix later
+    A = nx.adjacency_matrix(G)
     G = nx.Graph(A)
 
     plot_graph(G,pos,2)
@@ -331,6 +307,20 @@ def placement():
     # Get a random partition
     W0, W1, W2 = random_partition(G)
     count_edge_cuts(G, W0, W1, W2)
+
+    # Try using girvan_newman implementation in networkx
+    k = 3
+    G = nx.Graph(A)
+    comp = community.girvan_newman(G)
+    limited = itertools.takewhile(lambda c: len(c) <= k, comp)
+    for communities in limited:
+        print(tuple(sorted(c) for c in next(comp)))
+
+    # Use the networkx implementation
+    communities = list(nx.k_clique_communities(G, num_nodes/3))
+    print("networkx W0: ", communities[0])
+    print("networkx W1: ", communities[1])
+    print("networkx W2: ", communities[2])
 
     # Use the eigenvectors of the normalised Laplacian to calculate placement positions
     # for the nodes in the graph
@@ -342,11 +332,11 @@ def placement():
     Dinv = sp.sparse.spdiags(1/deg,diags,A.shape[0],A.shape[1])
     # Normalised laplacian
     L = Dinv*(D - A)
-    E, V= sp.sparse.linalg.eigs(L,3,None,100.0,'SM')
+    E, V= sp.sparse.linalg.eigs(L, 3, None, 100.0, 'SM')
     V = V.real
 
     for i in range(num_nodes):
-        eigen_pos[i] = V[i,1].real,V[i,2].real
+        eigen_pos[i] = V[i, 1].real, V[i, 2].real
 
 
     # for n,nbrsdict in G.adjacency_iter():
