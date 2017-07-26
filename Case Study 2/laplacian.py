@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
 # import kmeans
-from scipy.cluster.vq import vq, kmeans, whiten
+from scipy.cluster.vq import vq, kmeans
 
 import numpy as np
 import scipy as sp
@@ -120,8 +120,8 @@ def modularity(G, communities, weight='weight'):
     Q = sum(val(u, v) for c in communities for u, v in product(c, repeat=2))
     return Q * norm
 
-# Performance and associated helper functions taken from networkx source code...
 
+# Performance and associated helper functions taken from networkx source code...
 def intra_community_edges(G, partition):
     """Returns the number of intra-community edges according to the given
     partition of the nodes of `G`.
@@ -190,7 +190,7 @@ def inter_community_non_edges(G, partition):
     #                                    for block in partition))
     #     return sum(1 for u, v in nx.non_edges(G) if aff[u] != aff[v])
     #
-    #return inter_community_edges(nx.complement(G), partition)
+    return inter_community_edges(nx.complement(G), partition)
 
 
 def performance(G, partition):
@@ -477,11 +477,13 @@ def get_modularity(graph, list_of_partitions):
     mod = modularity(graph, list_of_partitions)
     return mod
 
+
 def get_performance(graph, list_of_partitions):
     print("Calculating performance")
     # Commented out as it not working as expected...
     # perf = performance(graph, list_of_partitions)
     # return perf
+    return 0
 
 
 def random_partition(graph):
@@ -499,37 +501,35 @@ def random_partition(graph):
     return w0, w1, w2
 
 
-def cluster_nodes(graph, feat, pos, eigen_pos, type):
-    book,distortion = kmeans(feat, 3)
-    codes,distortion = vq(feat, book)
+def cluster_nodes(graph, feat, pos, eigen_pos, cluster_type):
+    book, distortion = kmeans(feat, 3)
+    codes, distortion = vq(feat, book)
 
     nodes = np.array(range(graph.number_of_nodes()))
-    W0 = nodes[codes == 0].tolist()
-    W1 = nodes[codes == 1].tolist()
-    W2 = nodes[codes == 2].tolist()
-    print("W0 ", W0)
-    print("W1 ", W1)
-    print("W2 ", W2)
-    count_edge_cuts(graph, W0, W1, W2, type)
+    w0 = nodes[codes == 0].tolist()
+    w1 = nodes[codes == 1].tolist()
+    w2 = nodes[codes == 2].tolist()
+    print("W0 ", w0)
+    print("W1 ", w1)
+    print("W2 ", w2)
+    count_edge_cuts(graph, w0, w1, w2, cluster_type)
     communities = list()
-    communities.append(W0)
-    communities.append(W1)
-    communities.append(W2)
+    communities.append(w0)
+    communities.append(w1)
+    communities.append(w2)
     mod = get_modularity(graph, communities)
     print("Modularity: ", mod)
 
-
-
     plt.figure(3)
-    nx.draw_networkx_nodes(graph, eigen_pos, node_size=40, hold=True, nodelist=W0, node_color='m')
-    nx.draw_networkx_nodes(graph, eigen_pos, node_size=40, hold=True, nodelist=W1, node_color='b')
+    nx.draw_networkx_nodes(graph, eigen_pos, node_size=40, hold=True, nodelist=w0, node_color='m')
+    nx.draw_networkx_nodes(graph, eigen_pos, node_size=40, hold=True, nodelist=w1, node_color='b')
 
     plt.figure(2)
-    nx.draw_networkx_nodes(graph, pos, node_size=40, hold=True, nodelist=W0, node_color='m')
-    nx.draw_networkx_nodes(graph, pos, node_size=40, hold=True, nodelist=W1, node_color='b')
+    nx.draw_networkx_nodes(graph, pos, node_size=40, hold=True, nodelist=w0, node_color='m')
+    nx.draw_networkx_nodes(graph, pos, node_size=40, hold=True, nodelist=w1, node_color='b')
 
 
-def analyse_graph (graph):
+def analyse_graph(graph):
     print("Graph dimensions:")
     print("=================")
     print(nx.info(graph))
@@ -547,18 +547,18 @@ def analyse_graph (graph):
         counter += 1
     ave_degree = ave_degree / counter
 
-    print ("====================")
-    print ("Max node degree: ", max_degree)
-    print ("Min node degree: ", min_degree)
-    print ("Ave node degree: ", ave_degree)
-    print ("====================")
+    print("====================")
+    print("Max node degree: ", max_degree)
+    print("Min node degree: ", min_degree)
+    print("Ave node degree: ", ave_degree)
+    print("====================")
 
 
 def get_community_partitions(graph):
     partitions = community.best_partition(graph)
     communities = [partitions.get(node) for node in graph.nodes()]
     community_count = set(communities)
-    #components = sorted(communities, key=len, reverse=True)
+    # components = sorted(communities, key=len, reverse=True)
     print("====================")
     print("Community detected the following number of partitions: ", len(community_count))
     print("====================")
@@ -567,7 +567,7 @@ def get_community_partitions(graph):
     return communities
 
 
-def girvan_newman (G):
+def girvan_newman(G):
 
     if len(G.nodes()) == 1:
         return [G.nodes()]
@@ -580,8 +580,8 @@ def girvan_newman (G):
         """
         eb = nx.edge_betweenness_centrality(G0)
         eb_il = eb.items()
-        #eb_il.sort(key=lambda x: x[1], reverse=True)
-        eb_il_sorted=sorted(eb_il, key=lambda x: x[1], reverse=True)
+        # eb_il.sort(key=lambda x: x[1], reverse=True)
+        eb_il_sorted = sorted(eb_il, key=lambda x: x[1], reverse=True)
         return eb_il_sorted[0][0]
 
     components = list(nx.connected_component_subgraphs(G))
@@ -613,7 +613,7 @@ def remove_neighbours(graph, node, neighbours):
     with suppress(Exception):   # Needed if the edge was already removed.
         first = True
         for neighbour in neighbours:
-            if first == False:
+            if not first:
                 graph.remove_edge(node, neighbour)
             first = False
     return graph
@@ -630,9 +630,9 @@ def get_naive_partitions(graph):
     # Remove the edges until we have 3 connected components
     node_index = 0
     while nx.number_connected_components(graph) < 3:
-        print("Removing neighbours from node: ",node_index)
+        print("Removing neighbours from node: ", node_index)
         top_node = sorted_list[node_index][0]
-        top_neighbours=nx.neighbors(graph,top_node)
+        top_neighbours = nx.neighbors(graph, top_node)
         graph = remove_neighbours(graph, top_node, top_neighbours)
         node_index += 1
     print("Number of connected components after: ", nx.number_connected_components(graph))
@@ -656,43 +656,43 @@ def get_community_from_list(community_list, index):
 
 
 def run_random_models():
-    G = get_default_graph(False)
-    pos = get_random_positions(G.number_of_nodes())
+    gr = get_default_graph(False)
+    pos = get_random_positions(gr.number_of_nodes())
     # Need to rebuild the graph...
-    A = nx.adjacency_matrix(G)  # will use the adjacency matrix later
-    G = nx.Graph(A)
+    am = nx.adjacency_matrix(gr)  # will use the adjacency matrix later
+    gr = nx.Graph(am)
 
     # Draw the nodes
-    plot_graph(G, pos, 1)
+    plot_graph(gr, pos, 1)
 
-    num_nodes = G.number_of_nodes()
+    num_nodes = gr.number_of_nodes()
 
     # Add some edges
-    G = get_default_edges(G)
+    gr = get_default_edges(gr)
     # Need to rebuild the graph...
-    A = nx.adjacency_matrix(G)
-    G = nx.Graph(A)
+    am = nx.adjacency_matrix(gr)
+    gr = nx.Graph(am)
 
     # Print out the graph info...
-    analyse_graph(G)
+    analyse_graph(gr)
 
     # Draw the connected graph
-    plot_graph(G,pos,2)
+    plot_graph(gr, pos, 2)
 
     # Get a random partition
-    W0, W1, W2 = random_partition(G)
+    w0, w1, w2 = random_partition(gr)
     list_of_partitions = list()
-    list_of_partitions.append(W0)
-    list_of_partitions.append(W1)
-    list_of_partitions.append(W2)
-    count_edge_cuts_from_list(G, list_of_partitions, "Random")
-    mod = get_modularity(G, list_of_partitions)
+    list_of_partitions.append(w0)
+    list_of_partitions.append(w1)
+    list_of_partitions.append(w2)
+    count_edge_cuts_from_list(gr, list_of_partitions, "Random")
+    mod = get_modularity(gr, list_of_partitions)
     print("Modularity: ", mod)
-    perf = get_performance(G, list_of_partitions)
+    perf = get_performance(gr, list_of_partitions)
     print("Performance: ", perf)
 
     # Networkx community partitioning
-    partitions = get_community_partitions(G)
+    partitions = get_community_partitions(gr)
     partitions_count = set(partitions)
     list_of_partitions = list()
     length = len(partitions_count)
@@ -700,94 +700,93 @@ def run_random_models():
         comm = get_community_from_list(partitions, i)
         print(comm)
         list_of_partitions.append(comm)
-    count_edge_cuts_from_list(G, list_of_partitions, "Communities extension")
-    mod = get_modularity(G,list_of_partitions)
+    count_edge_cuts_from_list(gr, list_of_partitions, "Communities extension")
+    mod = get_modularity(gr,list_of_partitions)
     print("Modularity: ", mod)
-    perf = get_performance(G, list_of_partitions)
+    perf = get_performance(gr, list_of_partitions)
     print("Performance: ", perf)
 
     # NetworkX Girvan Newman partitioning
-    G = nx.Graph(A)
-    gncomps = get_girvan_newman_communities(G)
-    count_edge_cuts_from_list(G, gncomps, "Girvan Newman")
-    mod = get_modularity(G, gncomps)
+    gr = nx.Graph(am)
+    gncomps = get_girvan_newman_communities(gr)
+    count_edge_cuts_from_list(gr, gncomps, "Girvan Newman")
+    mod = get_modularity(gr, gncomps)
     print("Modularity: ", mod)
 
     # My naive partitioning algorithm.
-    G = nx.Graph(A)
-    communities = get_naive_partitions(G)
+    gr = nx.Graph(am)
+    communities = get_naive_partitions(gr)
     # Rebuild the graph as the last operation was destructive
-    G = nx.Graph(A)
-    count_edge_cuts_from_list(G, communities, "My naive algorithm")
-    mod = get_modularity(G, communities)
+    gr = nx.Graph(am)
+    count_edge_cuts_from_list(gr, communities, "My naive algorithm")
+    mod = get_modularity(gr, communities)
     print("Modularity: ", mod)
 
     # Use the eigenvectors of the normalised Laplacian to calculate placement positions
     # for the nodes in the graph
     # eigen_pos holds the positions
     eigen_pos = dict()
-    deg = A.sum(0)
+    deg = am.sum(0)
     diags = np.array([0])
-    D = sp.sparse.spdiags(deg,diags,A.shape[0],A.shape[1])
-    Dinv = sp.sparse.spdiags(1/deg,diags,A.shape[0],A.shape[1])
+    D = sp.sparse.spdiags(deg, diags, am.shape[0], am.shape[1])
+    Dinv = sp.sparse.spdiags(1/deg, diags, am.shape[0], am.shape[1])
     # Normalised laplacian
-    L = Dinv*(D - A)
+    L = Dinv*(D - am)
     E, V= sp.sparse.linalg.eigs(L, 3, None, 100.0, 'SM')
     V = V.real
 
     for i in range(num_nodes):
         eigen_pos[i] = V[i, 1].real, V[i, 2].real
 
-
     # for n,nbrsdict in G.adjacency_iter():
     #     for nbr,eattr in nbrsdict.items():
     #         if 'weight' in eattr:
     #             print n,nbr,eattr['weight']
 
-    plot_graph(G,eigen_pos,3)
+    plot_graph(gr,eigen_pos,3)
 
     # Now let's see if the eigenvectors are good for clustering
     # Use kmeans to cluster the points in the vector V
 
     features = np.column_stack((V[:,1], V[:,2]))
-    cluster_nodes(G,features,pos,eigen_pos, "eigenvectors")
+    cluster_nodes(gr, features, pos, eigen_pos, "eigenvectors")
 
     # Finally, use the columns of A directly for clustering
-    cluster_nodes(G,A.todense(),pos,eigen_pos, "Adjacency matrix")
+    cluster_nodes(gr, am.todense(), pos, eigen_pos, "Adjacency matrix")
 
     input("Press Enter to Continue ...")
 
 
 def run_facebook_models():
-    G = load_graph("facebook")
-    pos = get_random_positions(G.number_of_nodes())
+    gr = load_graph("facebook")
+    pos = get_random_positions(gr.number_of_nodes())
     # Need to rebuild the graph...
-    A = nx.adjacency_matrix(G)  # will use the adjacency matrix later
-    G = nx.Graph(A)
+    am = nx.adjacency_matrix(gr)  # will use the adjacency matrix later
+    gr = nx.Graph(am)
 
     # Draw the nodes
-    plot_graph(G, pos, 1)
+    plot_graph(gr, pos, 1)
 
-    num_nodes = G.number_of_nodes()
+    num_nodes = gr.number_of_nodes()
 
     # Print out the graph info...
-    analyse_graph(G)
+    analyse_graph(gr)
 
     # Draw the connected graph
-    plot_graph(G, pos, 2)
+    plot_graph(gr, pos, 2)
 
     # Get a random partition
-    W0, W1, W2 = random_partition(G)
+    w0, w1, w2 = random_partition(gr)
     list_of_partitions = list()
-    list_of_partitions.append(W0)
-    list_of_partitions.append(W1)
-    list_of_partitions.append(W2)
-    count_edge_cuts_from_list(G, list_of_partitions, "Random")
-    mod = get_modularity(G, list_of_partitions)
+    list_of_partitions.append(w0)
+    list_of_partitions.append(w1)
+    list_of_partitions.append(w2)
+    count_edge_cuts_from_list(gr, list_of_partitions, "Random")
+    mod = get_modularity(gr, list_of_partitions)
     print("Modularity: ", mod)
 
     # Networkx community partitioning
-    partitions = get_community_partitions(G)
+    partitions = get_community_partitions(gr)
     partitions_count = set(partitions)
     list_of_partitions = list()
     length = len(partitions_count)
@@ -795,51 +794,51 @@ def run_facebook_models():
         comm = get_community_from_list(partitions, i)
         print(comm)
         list_of_partitions.append(comm)
-    count_edge_cuts_from_list(G, list_of_partitions, "Communities extension")
-    mod = get_modularity(G, list_of_partitions)
+    count_edge_cuts_from_list(gr, list_of_partitions, "Communities extension")
+    mod = get_modularity(gr, list_of_partitions)
     print("Modularity: ", mod)
 
     # My naive partitioning algorithm.
-    G = nx.Graph(A)
-    communities = get_naive_partitions(G)
+    gr = nx.Graph(am)
+    communities = get_naive_partitions(gr)
     # Rebuild the graph as the last operation was destructive
-    G = nx.Graph(A)
-    count_edge_cuts_from_list(G, communities, "My naive algorithm")
-    mod = get_modularity(G, communities)
+    gr = nx.Graph(am)
+    count_edge_cuts_from_list(gr, communities, "My naive algorithm")
+    mod = get_modularity(gr, communities)
     print("Modularity: ", mod)
 
     # Use the eigenvectors of the normalised Laplacian to calculate placement positions
     # for the nodes in the graph
     # eigen_pos holds the positions
     eigen_pos = dict()
-    deg = A.sum(0)
+    deg = am.sum(0)
     diags = np.array([0])
-    D = sp.sparse.spdiags(deg, diags, A.shape[0], A.shape[1])
-    Dinv = sp.sparse.spdiags(1 / deg, diags, A.shape[0], A.shape[1])
+    D = sp.sparse.spdiags(deg, diags, am.shape[0], am.shape[1])
+    Dinv = sp.sparse.spdiags(1 / deg, diags, am.shape[0], am.shape[1])
     # Normalised laplacian
-    L = Dinv * (D - A)
+    L = Dinv * (D - am)
     E, V = sp.sparse.linalg.eigs(L, 3, None, 100.0, 'SM')
     V = V.real
 
     for i in range(num_nodes):
         eigen_pos[i] = V[i, 1].real, V[i, 2].real
 
-    plot_graph(G, eigen_pos, 3)
+    plot_graph(gr, eigen_pos, 3)
 
     # Now let's see if the eigenvectors are good for clustering
     # Use kmeans to cluster the points in the vector V
 
     features = np.column_stack((V[:, 1], V[:, 2]))
-    cluster_nodes(G, features, pos, eigen_pos, "eigenvectors")
+    cluster_nodes(gr, features, pos, eigen_pos, "eigenvectors")
 
     # Finally, use the columns of A directly for clustering
-    cluster_nodes(G, A.todense(), pos, eigen_pos, "adjacency matrix")
+    cluster_nodes(gr, am.todense(), pos, eigen_pos, "adjacency matrix")
 
     # NetworkX Girvan Newman partitioning - moved to the bottom for perf reasons...
-    G = nx.Graph(A)
-    gncomps = get_girvan_newman_communities(G)
-    count_edge_cuts_from_list(G, gncomps, "Girvan Newman")
-    mod = get_modularity(G, gncomps)
+    gr = nx.Graph(am)
+    gncomps = get_girvan_newman_communities(gr)
+    count_edge_cuts_from_list(gr, gncomps, "Girvan Newman")
+    mod = get_modularity(gr, gncomps)
     print("Modularity: ", mod)
 
     input("Press Enter to Continue ...")
