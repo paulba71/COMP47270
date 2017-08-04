@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def get_strongly_connected_components(graph):
-    comps = nx.strongly_connected_components(graph)
+    comps = sorted(nx.strongly_connected_components(graph), key = len, reverse=True)
     return comps
 
 

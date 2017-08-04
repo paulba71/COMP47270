@@ -196,31 +196,41 @@ def measure_clustering_quality(G):
     print("Measure the quality of the clustering")
 
 
+def calc_in_degree(G, component):
+    count=0
+
+
 def analyse_strongly_connected_components(G):
     try:
         num_strongly_connected_components = nx.number_strongly_connected_components(G)
         print("Strongly Connected Component Count - ", num_strongly_connected_components)
         comps = helpers.get_strongly_connected_components(G)
-        component_sizes = []
-        for nodes in comps:
-            component_sizes.extend([len(nodes)])
-        component_sizes.sort(reverse=True)
-        print("Biggest connected component size: ", component_sizes[0])
+        Gcc=comps[0]
+        print("Biggest connected component size: ", len(Gcc))
+
         # Get in degree
-        indegrees = G.in_degree().values()
         incount = 0
-        for degree in indegrees:
-            if degree == 0:
-                incount += 1
+        for node in G.nodes_iter():
+            if node not in Gcc:
+                found = False
+                for successor in G.successors(node):
+                    if successor in Gcc and not found:
+                        incount += 1
+                        found = True
         print("In degree - ", incount)
 
-        #Get out degree
-        outdegrees = G.out_degree().values()
+        # Get the out degree
         outcount = 0
-        for degree in outdegrees:
-            if degree == 0:
+        for node in Gcc:
+            # Count number of connections that are not in teh GCC > 0 increments outcount
+            node_out = 0
+            for neighbour in G.neighbors(node):
+                if neighbour not in Gcc:
+                    node_out += 1
+            if node_out > 0:
                 outcount += 1
         print("Outdegree = ", outcount)
+
 
     except Exception as e:
         print("Exception: - ", e)
@@ -229,8 +239,9 @@ def analyse_strongly_connected_components(G):
 def analyse_directed_graph():
     graph = load_graph('college', True)
     # helpers.draw_graph(graph)
-    print("Graph nodes: ", graph.number_of_nodes())
-    print("Graph edges: ", graph.number_of_edges())  # already has edges from dataset...
+    #print("Graph nodes: ", graph.number_of_nodes())
+    #print("Graph edges: ", graph.number_of_edges())  # already has edges from dataset...
+    print(nx.info(graph))
 
     analyse_strongly_connected_components(graph)
 
